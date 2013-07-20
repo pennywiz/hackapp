@@ -5,7 +5,30 @@ var express = require('express')
   , util = require('util')
   , http = require('http')
   , path = require('path')
+  , mongo = require('mongodb') 
   , facebook = require('./fb-api');
+
+var Server = mongo.Server,
+    Db = mongo.Db,
+    BSON = mongo.BSONPure;
+
+var mongoUri = "mongodb://@localhost:27017/hackapp";
+
+/*
+
+mongo.Db.connect(mongoUri, function (err, db) {
+  db.collection('places', function(err, collection) {
+    collection.find({'city': city}).toArray(function(err, items) {
+      if (err) {
+            res.send({'error':'An error has occurred'});
+      } else {
+        res.send(items);
+      }
+    });
+  });
+});
+
+*/
   
 var app = express();
 
@@ -59,6 +82,16 @@ app.get('/', function(req, res){
 
 app.get('/account', ensureAuthenticated, function(req, res){
   res.render('account', { user: req.user, friends: friends });
+
+  var user_data = {'userid': req.user.id, 'user': req.user, 'friends': friends};
+
+  mongo.Db.connect(mongoUri, function (err, db) {
+    db.collection('users', function(err, collection) {
+      collection.insert(user_data,{safe:true},function(err, item) {
+          console.log('saved correctly');
+      });
+    });
+  });
 });
 
 app.get('/login', function(req, res){
